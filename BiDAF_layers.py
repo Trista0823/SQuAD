@@ -1,4 +1,4 @@
-"""Assortment of layers for use in models.py.
+"""Assortment of layers for use in BiDAF_models.py.
 
 Author:
     Chris Chute (chute@stanford.edu)
@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from util import masked_softmax
 
-
+# Word Embedding: class Embedding, HighwayEncoder
 class Embedding(nn.Module):
     """Embedding layer used by BiDAF, without the character-level component.
 
@@ -68,6 +68,7 @@ class HighwayEncoder(nn.Module):
         return x
 
 
+# Char Embedding: class CNN, Highway, CharEmbedding
 class CNN(nn.Module):
     def __init__(self, embed_char, embed_word, max_word_len):
         super(CNN, self).__init__()

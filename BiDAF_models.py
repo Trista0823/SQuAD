@@ -30,9 +30,9 @@ class BiDAF(nn.Module):
         drop_prob (float): Dropout probability.
     """
 
-    # TODO: vocab of SQuAD
+    # TODO: check vocab of SQuAD, char2idx.json (args.char2idx_file)
 
-    def __init__(self, word_vectors, hidden_size, vocab,drop_prob=0., is_char_embedding=True):
+    def __init__(self, word_vectors, hidden_size, vocab, drop_prob=0., is_char_embedding=True):
         super(BiDAF, self).__init__()
 
         if is_char_embedding:
