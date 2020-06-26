@@ -68,6 +68,75 @@ class HighwayEncoder(nn.Module):
         return x
 
 
+class CNN(nn.Module):
+    def __init__(self, embed_char, embed_word, max_word_len):
+        super(CNN, self).__init__()
+        self.cnn = nn.Conv1d(embed_char, embed_word, kernel_size=5)
+        self.pooling = nn.MaxPool1d(kernel_size=max_word_len-4)
+
+    def forward(self, X_reshape):                                      # X_reshape: [batch_size, embed_char, max_word_len]
+        X_conv = self.cnn(X_reshape)                                   # X_conv: [batch_size, embed_word, max_word_len-kernel_size+1]
+        X_conv_out = self.pooling(F.relu(X_conv)).squeeze(2)           # X_conv_out: [batch_size, embed_word]
+        return X_conv_out
+
+
+class Highway(nn.Module):
+    def __init__(self, embed_word):
+        super(Highway, self).__init__()
+        self.proj = nn.Linear(embed_word, embed_word, bias=True)
+        self.gate = nn.Linear(embed_word, embed_word, bias=True)
+
+    def forward(self, X_conv_out):                                      # X_conv_out: [batch_size, embed_size]
+        X_proj = F.relu(self.proj(X_conv_out))                          # X_proj: [batch_size, embed_size]
+        X_gate = torch.sigmoid(self.gate(X_conv_out))                   # X_gate: [batch_size, embed_size]
+        X_highway = X_gate*X_proj + (1-X_gate)*X_conv_out               # X_highway: [batch_size, embed_size]
+        return X_highway
+
+
+class CharEmbeddings(nn.Module):
+    """
+    Class that converts input words to their CNN-based embeddings.
+    """
+    def __init__(self, embed_size, vocab, dropout_rate):
+        """
+        Init the Embedding layer for one language
+        @param embed_size (int): Embedding size (dimensionality) for the output
+        @param vocab (VocabEntry): VocabEntry object. See vocab.py for documentation.
+        """
+        super(CharEmbeddings, self).__init__()
+
+        self.embed_size = embed_size
+        self.char_embed_size = 50
+        self.max_word_len = 21
+        self.dropout_rate = dropout_rate
+        self.vocab = vocab
+
+        pad_token_idx = vocab.char2id['<pad>']
+        self.char_embedding = nn.Embedding(len(vocab.char2id), self.char_embed_size, padding_idx=pad_token_idx)    # embed_size = embed_word; embed_char = 50;
+        self.cnn = CNN(self.char_embed_size, embed_size, self.max_word_len)
+        self.highway = Highway(self.embed_size)
+        self.dropout = nn.Dropout(0.3)
+
+    def forward(self, input):
+        """
+        Looks up character-based CNN embeddings for the words in a batch of sentences.
+        @param input: Tensor of integers of shape (sentence_length, batch_size, max_word_length) where
+            each integer is an index into the character vocabulary
+
+        @param output: Tensor of shape (sentence_length, batch_size, embed_size), containing the
+            CNN-based embeddings for each word of the sentences in the batch
+        """
+        batch_size = input.shape[1]                                             # input = X_padded: [sents_len, batch_size, max_word_len]
+        X_reshape = input.long()                                                # X_reshape: [sents_len, batch_size, max_word_len]
+        X_emb = self.char_embedding(X_reshape)                                  # X_emb: [batch_size, sents_len, max_word_len, embed_char]
+        X_emb = X_emb.view(-1, X_emb.shape[3], X_emb.shape[2])                  # X_emb: [batch_size*sents_len, embed_char, max_word_len]
+        X_conv_out = self.cnn(X_emb)                                            # X_conv_out: [batch_size*sents_len, embed_word]
+        X_highway = self.highway(X_conv_out)                                    # X_highway: [batch_size*sents_len, embed_word]
+        X_word_emb = self.dropout(X_highway)
+        output = X_word_emb.view(batch_size, -1, X_word_emb.shape[-1])          # output: [batch_size, sents_len, embed_word]
+        return output
+
+
 class RNNEncoder(nn.Module):
     """General-purpose layer for encoding a sequence using a bidirectional RNN.
 
