@@ -10,7 +10,7 @@ import torch.nn as nn
 
 
 class BiDAF(nn.Module):
-    """Baseline BiDAF model for SQuAD.
+    """Modified Baseline BiDAF model for SQuAD.
 
     Based on the paper:
     "Bidirectional Attention Flow for Machine Comprehension"
@@ -18,7 +18,8 @@ class BiDAF(nn.Module):
     (https://arxiv.org/abs/1611.01603).
 
     Follows a high-level structure commonly found in SQuAD models:
-        - Embedding layer: Embed word indices to get word vectors.
+        - Embedding layer: Embed word indices(lookup) to get word vectors and embed character indices(fine tune) with
+                           Conv1d, then go throw a Highway and dropout.
         - Encoder layer: Encode the embedded sequence.
         - Attention layer: Apply an attention mechanism to the encoded sequence.
         - Model encoder layer: Encode the sequence again.
@@ -30,21 +31,14 @@ class BiDAF(nn.Module):
         drop_prob (float): Dropout probability.
     """
 
-    # TODO: check vocab of SQuAD, char2idx.json (args.char2idx_file)
-
-    def __init__(self, word_vectors, hidden_size, vocab, drop_prob=0., is_char_embedding=True):
+    def __init__(self, word_vectors, char_vectors, hidden_size, drop_prob=0.):
         super(BiDAF, self).__init__()
 
-        if is_char_embedding:
-            # Char Embedding
-            self.emb = BiDAF_layers.CharEmbeddings(embed_size=hidden_size,
-                                                   vocab=vocab,
-                                                   dropout_rate=drop_prob)
-        else:
-            # GloVe Embedding
-            self.emb = BiDAF_layers.Embedding(word_vectors=word_vectors,
-                                              hidden_size=hidden_size,
-                                              drop_prob=drop_prob)
+        # Char Embedding
+        self.emb = BiDAF_layers.CharEmbeddings(word_vectors=word_vectors,
+                                               char_vectors=char_vectors,
+                                               hidden_size=hidden_size,
+                                               dropout_rate=drop_prob)
 
         self.enc = BiDAF_layers.RNNEncoder(input_size=hidden_size,
                                            hidden_size=hidden_size,
@@ -62,13 +56,13 @@ class BiDAF(nn.Module):
         self.out = BiDAF_layers.BiDAFOutput(hidden_size=hidden_size,
                                             drop_prob=drop_prob)
 
-    def forward(self, cw_idxs, qw_idxs):
+    def forward(self, cw_idxs, qw_idxs, cc_idxs, qc_idxs):
         c_mask = torch.zeros_like(cw_idxs) != cw_idxs
         q_mask = torch.zeros_like(qw_idxs) != qw_idxs
         c_len, q_len = c_mask.sum(-1), q_mask.sum(-1)
 
-        c_emb = self.emb(cw_idxs)         # (batch_size, c_len, hidden_size)
-        q_emb = self.emb(qw_idxs)         # (batch_size, q_len, hidden_size)
+        c_emb = self.emb(cw_idxs, cc_idxs)         # (batch_size, c_len, hidden_size)
+        q_emb = self.emb(qw_idxs, qc_idxs)         # (batch_size, q_len, hidden_size)
 
         c_enc = self.enc(c_emb, c_len)    # (batch_size, c_len, 2 * hidden_size)
         q_enc = self.enc(q_emb, q_len)    # (batch_size, q_len, 2 * hidden_size)
