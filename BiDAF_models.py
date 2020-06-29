@@ -1,7 +1,7 @@
-"""Top-level model classes.
+"""Top-level BiDAF model class.
 
 Author:
-    Chris Chute (chute@stanford.edu)
+    Chris Chute (chute@stanford.edu), Mengyao Bao(mb7570@nyu.edu)
 """
 
 import BiDAF_layers

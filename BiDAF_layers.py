@@ -1,7 +1,7 @@
 """Assortment of layers for use in BiDAF_models.py.
 
 Author:
-    Chris Chute (chute@stanford.edu)
+    Chris Chute (chute@stanford.edu), Mengyao Bao (mb7570@nyu.edu)
 """
 
 import torch
