@@ -12,39 +12,55 @@ import math
 import copy
 from torch.autograd import Variable
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-from util import masked_softmax
-
-
-def clones(module, N):
-    "Produce N identical layers."
-    return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
+from util import mask_logits, clones
 
 
 class SublayerConnection(nn.Module):
     """
+    only used for conv layers in QAEncoderBlock
     A residual connection followed by a layer norm.
-    Note for code simplicity the norm is first as opposed to last.
+
+    Args:
+        size (int): input shape from an expected input of size, normalize over the last dimension which is expected
+                    to be of that specific size.
+        dropout (float): dropout rate
     """
     def __init__(self, size, dropout):
         super(SublayerConnection, self).__init__()
         self.norm = nn.LayerNorm(size, eps=1e-6)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, x, sublayer):
-        "Apply residual connection to any sublayer with the same size."
-        return x + self.dropout(sublayer(self.norm(x)))
+    def forward(self, x, sublayer):                                 # x: [batch_size, seq_len, d_model]
+        """Apply residual connection to any sublayer with the same size.
+        Args:
+            sublayer (torch.nn.Module): sublayer need to be applied
+        """
+
+        x = self.norm(x)
+        x = x.transpose(1, 2)                                       # x: [batch_size, seq_len, d_model]
+        x = x + self.dropout(sublayer(x))
+        return x.transpose(1, 2)                                    # x: [batch_size, seq_len, d_model]
 
 
 class DepthwiseSeperableConv(nn.Module):
     """
+    Depthwise separable convolutions for memory efficient and better generalization
+
+    See introduction here:
     https://arxiv.org/pdf/1704.04861.pdf
     https://yinguobing.com/separable-convolution/
+
+    Args:
+        in_channels (int): Number of channels in the input
+        out_channels (int): Number of channels produced by the convolution
+        kernel (int): Size of the convolving kernel
     """
     def __init__(self, in_channels, out_channels=128, kernel=7):
         super(DepthwiseSeperableConv, self).__init__()
         self.depthwise = nn.Conv1d(in_channels, in_channels, kernel_size=kernel,
                                    groups=in_channels, padding=(kernel-1)//2)
         self.pointwise = nn.Conv1d(in_channels, out_channels, kernel_size=1)
+
     def forward(self, x):
         x = self.depthwise(x)
         x = F.relu(x)
@@ -53,7 +69,9 @@ class DepthwiseSeperableConv(nn.Module):
 
 
 class ScaledDotProductAttention(nn.Module):
-    ''' Scaled Dot-Product Attention '''
+    """Scaled Dot-Product Attention
+       Code from https://github.com/jadore801120/attention-is-all-you-need-pytorch/tree/master/transformer
+    """
 
     def __init__(self, temperature, attn_dropout=0.1):
         super().__init__()
@@ -74,7 +92,9 @@ class ScaledDotProductAttention(nn.Module):
 
 
 class MultiHeadAttention(nn.Module):
-    ''' Multi-Head Attention module '''
+    """ Multi-Head Attention module
+        Code from https://github.com/jadore801120/attention-is-all-you-need-pytorch/tree/master/transformer
+    """
 
     def __init__(self, n_head, d_model, d_k, d_v, dropout=0.1):
         super().__init__()
@@ -92,7 +112,6 @@ class MultiHeadAttention(nn.Module):
 
         self.dropout = nn.Dropout(dropout)
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
-
 
     def forward(self, q, k, v, mask=None):                          # q, k, v: [batch_size, seq_len, d_model]
         d_k, d_v, n_head = self.d_k, self.d_v, self.n_head
@@ -125,7 +144,9 @@ class MultiHeadAttention(nn.Module):
 
 
 class PositionwiseFeedForward(nn.Module):
-    ''' A two-feed-forward-layer module '''
+    """ A two-feed-forward-layer module
+        Code from https://github.com/jadore801120/attention-is-all-you-need-pytorch/tree/master/transformer
+    """
 
     def __init__(self, d_in, d_hid, dropout=0.1):
         super().__init__()
@@ -146,7 +167,9 @@ class PositionwiseFeedForward(nn.Module):
 
 
 class PositionalEncoding(nn.Module):
-    "Implement the PE function."
+    """Implement the PE function.
+       Code from http://nlp.seas.harvard.edu/2018/04/03/attention.html
+    """
 
     def __init__(self, d_model, dropout, max_len=5000):
         super(PositionalEncoding, self).__init__()
@@ -154,8 +177,8 @@ class PositionalEncoding(nn.Module):
 
         # Compute the positional encodings once in log space.
         pe = torch.zeros(max_len, d_model)
-        position = torch.arange(0, max_len).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, d_model, 2) *
+        position = torch.arange(0., max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0., d_model, 2) *
                              -(math.log(10000.0) / d_model))
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
@@ -163,12 +186,18 @@ class PositionalEncoding(nn.Module):
         self.register_buffer('pe', pe)
 
     def forward(self, x):
-        x = x + Variable(self.pe[:, :x.size(1)],                        # pe broadcast to every sample in dim=0
-                         requires_grad=False)
+        x = x + Variable(self.pe[:, :x.size(1)], requires_grad=False)           # pe broadcast to every sample in dim=0
         return self.dropout(x)
 
 
 class QAEncoderBlock(nn.Module):
+    """
+    Encoder Block for Encoder layer and Model layer in QANet
+
+    A stack of the following basic building block: [convolution-layer * # + self-attention-layer + feed-forward-layer]
+    Each of these basic operations (conv/self-attention/ffn) is place inside a residual block. For an input X and a
+    given operation F, the output is F(layerNorm(X))+X
+    """
     def __init__(self, kernel, d_model, d_ff, num_layers=4, n_head=8, dropout_rate=0.4):
         super(QAEncoderBlock, self).__init__()
         self.num_layers = num_layers
@@ -178,40 +207,57 @@ class QAEncoderBlock(nn.Module):
 
         self.position = PositionalEncoding(d_model, dropout=dropout_rate)
         self.cnns = clones(DepthwiseSeperableConv(in_channels=d_model, out_channels=d_model, kernel=kernel), num_layers)
-        self.sublayer = clones(SublayerConnection(d_model, dropout_rate), num_layers+1)
+        self.sublayer = clones(SublayerConnection(d_model, dropout_rate), num_layers)
         self.layer_norm = nn.LayerNorm(d_model)
         self.attention = MultiHeadAttention(n_head, d_model, self.d_k, self.d_v,)
         self.ff = PositionwiseFeedForward(d_model, d_ff)
 
-    # TODO: mask
     def forward(self, x, mask):                             # x from ChaEmbedding: [batch_size, seq_len, hidden_size(d_model)]
         x = self.position(x)                                # x: [batch_size, seq_len, d_model]
 
         for i, cnn in enumerate(self.cnns):
-            x = self.sublayer[i](x, cnn)                    # x: [batch_size, seq_len, d_model]
-
+            x = self.sublayer[i](x, cnn)
+                                                            # after for loop x: [batch_size, d_model, seq_len]
         q, attn = self.attention(x, x, x)                   # q: [batch_size, seq_len, d_model]
-        x = self.layer_norm(x+q)
 
-        return self.sublayer[-1](x, self.ff)                # output: [batch_size, seq_len, d_ff]
+        x += self.layer_norm(q)
+        x = self.ff(x)
+        return x                                            # output: [batch_size, seq_len, d_ff]
 
 
 class QAOutput(nn.Module):
+    """
+    Output layer for QANet
+
+    Computes a linear transformation of the attention and modeling outputs, then takes the softmax of the result to
+    get the start pointer. A second linear+softmax of the attention outputs are used to get the end pointer.
+
+    Args:
+    hidden_size (int): Size of hidden activations.
+    """
     def __init__(self, hidden_size):
         super(QAOutput, self).__init__()
         self.linear_1 = nn.Linear(hidden_size*2, 1)
         self.linear_2 = nn.Linear(hidden_size*2, 1)
 
-
     def forward(self, M0, M1, M2, mask):
+        """
+        Args:
+            M0, M1, M2 (torch.tensor): the outputs of the three model encoders from bottom to up
+            See more details in Figure1: https://arxiv.org/pdf/1804.09541.pdf
+
+        Returns:
+            log_p1, log_p2 (torch.tensor): logits for start and end position
+        """
         # Shapes: (batch_size, seq_len, 1)
         X1 = torch.cat([M0, M1], dim=2)
-        X2 = torch.cat([M1, M2], dim=2)
+        X2 = torch.cat([M0, M2], dim=2)
         logits_1 = self.linear_1(X1)
         logits_2 = self.linear_1(X2)
 
         # Shapes: (batch_size, seq_len)
-        log_p1 = masked_softmax(logits_1.squeeze(), mask, log_softmax=True)
-        log_p2 = masked_softmax(logits_2.squeeze(), mask, log_softmax=True)
+        mask = mask.type(torch.float)
+        log_p1 = mask_logits(logits_1.squeeze(), mask)
+        log_p2 = mask_logits(logits_2.squeeze(), mask)
 
         return log_p1, log_p2

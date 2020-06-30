@@ -26,7 +26,8 @@ class BiDAF(nn.Module):
         - Output layer: Simple layer (e.g., fc + softmax) to get final outputs.
 
     Args:
-        word_vectors (torch.Tensor): Pre-trained word vectors.
+        word_vectors (torch.tensor): Pre-trained word vectors.
+        char_vectors (torch.tensor): Pre-trained char vectors.
         hidden_size (int): Number of features in the hidden state at each layer.
         drop_prob (float): Dropout probability.
     """

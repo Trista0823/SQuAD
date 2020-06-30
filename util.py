@@ -9,7 +9,9 @@ import queue
 import re
 import shutil
 import string
+import copy
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data as data
 import tqdm
@@ -723,3 +725,12 @@ def compute_f1(a_gold, a_pred):
     recall = 1.0 * num_same / len(gold_toks)
     f1 = (2 * precision * recall) / (precision + recall)
     return f1
+
+
+def mask_logits(target, mask):
+    return target * (1-mask) + mask * (-1e30)
+
+
+def clones(module, N):
+    """Produce N identical layers."""
+    return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])

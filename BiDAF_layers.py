@@ -72,6 +72,12 @@ class CNN(nn.Module):
     General-purpose layer for encoding a sequence using a Conv1d and maxPooling.
     """
     def __init__(self, in_channels, out_channels, kernel_size):
+        """
+        Args:
+            in_channels: num of channels of input
+            out_channels: num of channels of output produced by the convolution
+            kernel_size: size of the convolving kernel
+        """
         super(CNN, self).__init__()
         self.cnn = nn.Conv1d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size)
         self.in_channels = in_channels
@@ -91,10 +97,11 @@ class CharEmbeddings(nn.Module):
     def __init__(self, word_vectors, char_vectors, hidden_size, dropout_rate):
         """
         Init the Embedding layer for text
-        @param word_emb(tensor): Pretrained word vectors
-        @param char_emb(tensor): Pretrained char vectors
-        @param hidden_size (int): Embedding size (dimensionality) for the output
-        @param dropout_rate (float): dropout rate.
+        Args:
+            word_emb (tensor): Pretrained word vectors
+            char_emb (tensor): Pretrained char vectors
+            hidden_size (int): Embedding size (dimensionality) for the output
+            dropout_rate (float): dropout rate.
         """
         super(CharEmbeddings, self).__init__()
 
@@ -113,13 +120,15 @@ class CharEmbeddings(nn.Module):
     def forward(self, word_idx, char_idx):
         """
         Looks up character-based CNN embeddings for the words in a batch of sentences.
-        @param word_idx: Tensor of integers of shape (batch_size, sentence_length) where
-            each integer is an index into the word vocabulary
-        @param char_idx: Tensor of integers of shape (batch_size, sentence_length, max_word_length) where
-            each integer is an index into the character vocabulary
 
-        @param output: Tensor of shape (sentence_length, batch_size, embed_size), containing the
-            CNN-based embeddings for each word of the sentences in the batch
+        Args:
+            word_idx: Tensor of integers of shape (batch_size, sentence_length) where each integer is an index
+                      into the word vocabulary
+            char_idx: Tensor of integers of shape (batch_size, sentence_length, max_word_length) where each integer
+                      is an index into the character vocabulary
+        Returns:
+            output: Tensor of shape (sentence_length, batch_size, embed_size), containing the CNN-based embeddings
+                    for each word of the sentences in the batch
         """
         batch_size = char_idx.shape[0]
         char_idx = char_idx.long()                              # char_idx: [batch_size, seq_len(400/50), word_len(16)]
@@ -131,7 +140,7 @@ class CharEmbeddings(nn.Module):
         word_idx = word_idx.long()                              # word_idx: [batch_size, seq_len]
         word_emb = self.word_embedding(word_idx)                # word_emb: [batch_size, seq_len, word_embed]
         word_emb = word_emb.view(-1, word_emb.shape[-1])        # word_emb: [batch_size*seq_len, word_embed]
-        embed = torch.cat([char_emb, word_emb], dim=1)          # embed: [batch_size*seq_len, word_embed+hidden_size]
+        embed = torch.cat((char_emb, word_emb), dim=1)          # embed: [batch_size*seq_len, word_embed+hidden_size]
         embed = self.proj(embed)                                # embed: [batch_size*seq_len, hidden_size]
 
         highway = self.highway(embed)                           # highway: [batch_size*seq_len, hidden_size]
