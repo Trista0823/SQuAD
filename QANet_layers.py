@@ -11,7 +11,7 @@ import torch.nn.functional as F
 import math
 import copy
 from torch.autograd import Variable
-from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+from BiDAF_layers import HighwayEncoder
 from util import mask_logits, clones
 
 
@@ -37,7 +37,7 @@ class SublayerConnection(nn.Module):
         """
 
         x = self.norm(x)
-        x = x.transpose(1, 2)                                       # x: [batch_size, seq_len, d_model]
+        x = x.transpose(1, 2)                                       # x: [batch_size, d_model, seq_len]
         x = x + self.dropout(sublayer(x))
         return x.transpose(1, 2)                                    # x: [batch_size, seq_len, d_model]
 
@@ -62,10 +62,10 @@ class DepthwiseSeperableConv(nn.Module):
         self.pointwise = nn.Conv1d(in_channels, out_channels, kernel_size=1)
 
     def forward(self, x):
-        x = self.depthwise(x)
+        x = self.depthwise(x)                                           # x: [batch_size, in_channels, seq_len]
         x = F.relu(x)
         x = self.pointwise(x)
-        return F.relu(x)                                                # x: [batch_size, seq_len, out_channels]
+        return F.relu(x)                                                # x: [batch_size, out_channels, seq_len]
 
 
 class ScaledDotProductAttention(nn.Module):

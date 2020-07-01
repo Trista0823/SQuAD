@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from BiDAF_layers import CharEmbeddings, BiDAFAttention
-from QANet_layers import clones, QAEncoderBlock, QAOutput
+from QANet_layers import clones, QAEncoderBlock, QAOutput, DepthwiseSeperableConv
 
 
 class QANet(nn.Module):
@@ -37,7 +37,6 @@ class QANet(nn.Module):
     def __init__(self, word_vectors, char_vectors, hidden_size, drop_prob, kernel):
         super(QANet, self).__init__()
         # Embed layer
-        # TODO: QANet Embedding has output dimension 300(word_emb dim)+200(char_emb dim), may also need to change encoder layer
         self.embedding = CharEmbeddings(word_vectors=word_vectors,
                                         char_vectors=char_vectors,
                                         hidden_size=hidden_size,            # hidden_size = 128
@@ -49,11 +48,11 @@ class QANet(nn.Module):
         # Attention layer
         self.att = BiDAFAttention(hidden_size=hidden_size)
         # Model layer
-        # TODO: share weights between each of the 3 repetitions of the model encoder?
-        self.models = clones(QAEncoderBlock(kernel=kernel, d_model=hidden_size*4,
-                                            d_ff=hidden_size*4, num_layers=2), 3)
+        self.proj = DepthwiseSeperableConv(in_channels=hidden_size*4, out_channels=hidden_size)
+        self.models = clones(QAEncoderBlock(kernel=kernel, d_model=hidden_size,
+                                            d_ff=hidden_size, num_layers=2), 2)
         # Output layer
-        self.output = QAOutput(hidden_size=hidden_size*4)
+        self.output = QAOutput(hidden_size=hidden_size)
 
     def forward(self, cw_idxs, qw_idxs, cc_idxs, qc_idxs):
         """
@@ -77,14 +76,21 @@ class QANet(nn.Module):
         c_enc = self.context_encoders(c_embed, c_mask)      # c_enc: [batch_size, seq_len, hidden_size]
 
         att = self.att(c_enc, q_enc, c_mask, q_mask)        # att: [batch_size, seq_len, hidden_size*4]
+        att = att.transpose(1, 2)                           # att: [batch_size, hidden_size*4, seq_len]
 
-        M = [att]
-        for i in range(len(self.models)):
-            model = self.models[i]
-            temp = model(M[i], c_mask)
-            M.append(temp)                                  # M[i]: [batch_size, seq_len, hidden_size*4]
+        M1 = self.proj(att).transpose(1, 2)                 # M1, M2, M3: [batch_size, seq_len, hidden_size*4]
 
-        out = self.output(M[0], M[1], M[2], c_mask)         # output: (log_p1, log_p2), each of shape: [batch_size, seq_len]
+        for model in self.models:
+            M1 = model(M1, c_mask)
+
+        M2 = M1
+        for model in self.models:
+            M2 = model(M2, c_mask)
+
+        M3 = M2
+        for model in self.models:
+            M3 = model(M3, c_mask)
+        out = self.output(M1, M2, M3, c_mask)               # output: (log_p1, log_p2), each of shape: [batch_size, seq_len]
         return out
 
 

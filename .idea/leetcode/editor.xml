@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="LeetcodeEditor">
+    <option name="projectConfig">
+      <map>
+        <entry key="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[114]Flatten Binary Tree to Linked List.py">
+          <value>
+            <LeetcodeEditor>
+              <option name="path" value="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[114]Flatten Binary Tree to Linked List.py" />
+              <option name="questionId" value="114" />
+            </LeetcodeEditor>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[236]Lowest Common Ancestor of a Binary Tree.py">
+          <value>
+            <LeetcodeEditor>
+              <option name="path" value="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[236]Lowest Common Ancestor of a Binary Tree.py" />
+              <option name="questionId" value="236" />
+            </LeetcodeEditor>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[449]Serialize and Deserialize BST.py">
+          <value>
+            <LeetcodeEditor>
+              <option name="path" value="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[449]Serialize and Deserialize BST.py" />
+              <option name="questionId" value="449" />
+            </LeetcodeEditor>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

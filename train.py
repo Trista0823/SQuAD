@@ -53,11 +53,16 @@ def main(args):
                            hidden_size=args.hidden_size,
                            drop_prob=args.drop_prob)
 
-    model = QANet(word_vectors=word_vectors,
+    model_QANet = QANet(word_vectors=word_vectors,
                   char_vectors=char_vectors,
                   hidden_size=args.hidden_size,
                   kernel=args.kernel_size,
                   drop_prob=args.drop_prob)
+
+    if args.is_baseline:
+        model = model_baseline
+    else:
+        model = model_QANet
 
     model = nn.DataParallel(model, args.gpu_ids)
     if args.load_path:
