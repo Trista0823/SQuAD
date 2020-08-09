@@ -43,14 +43,14 @@ class QANet(nn.Module):
                                         dropout_rate=drop_prob)
 
         # Encoder layer
-        self.query_encoders = QAEncoderBlock(kernel=kernel, d_model=hidden_size, d_ff=hidden_size, num_layers=4)
-        self.context_encoders = QAEncoderBlock(kernel=kernel, d_model=hidden_size, d_ff=hidden_size, num_layers=4)
+        self.query_encoders = QAEncoderBlock(kernel=kernel, d_model=hidden_size, d_ff=hidden_size, num_layers=4, dropout_rate=drop_prob)
+        self.context_encoders = QAEncoderBlock(kernel=kernel, d_model=hidden_size, d_ff=hidden_size, num_layers=4, dropout_rate=drop_prob)
         # Attention layer
         self.att = BiDAFAttention(hidden_size=hidden_size)
         # Model layer
         self.proj = DepthwiseSeperableConv(in_channels=hidden_size*4, out_channels=hidden_size)
         self.models = clones(QAEncoderBlock(kernel=kernel, d_model=hidden_size,
-                                            d_ff=hidden_size, num_layers=2), 2)
+                                            d_ff=hidden_size, num_layers=2, dropout_rate=drop_prob), 2)     # use 7 in the paper
         # Output layer
         self.output = QAOutput(hidden_size=hidden_size)
 

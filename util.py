@@ -679,6 +679,15 @@ def compute_avna(prediction, ground_truths):
     return float(bool(prediction) == bool(ground_truths))
 
 
+def mask_logits(target, mask):
+    return target * (1-mask) + mask * (-1e30)
+
+
+def clones(module, N):
+    """Produce N identical layers."""
+    return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
+
+
 # All methods below this line are from the official SQuAD 2.0 eval script
 # https://worksheets.codalab.org/rest/bundles/0x6b567e1cf2e041ec80d7098f031c5c9e/contents/blob/
 def normalize_answer(s):
@@ -727,10 +736,4 @@ def compute_f1(a_gold, a_pred):
     return f1
 
 
-def mask_logits(target, mask):
-    return target * (1-mask) + mask * (-1e30)
 
-
-def clones(module, N):
-    """Produce N identical layers."""
-    return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])

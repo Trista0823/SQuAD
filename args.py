@@ -250,3 +250,22 @@ def add_train_test_args(parser):
                         type=str,
                         default=None,
                         help='Path to load as a model checkpoint.')
+
+
+    parser.add_argument('--num_encoder_channels',
+                        type=int,
+                        default=128,
+                        help='Number of channels in the QANet encoder')
+    parser.add_argument('--num_conv_layers',
+                        type=int,
+                        default=4,
+                        help='Convolutional layers in residual block')
+    parser.add_argument('--encoder_k',
+                        type=int,
+                        default=7,
+                        help='Kernel size')
+    parser.add_argument('--attention_heads',
+                        type=int,
+                        default=8,
+                        help='Kernel size')
+

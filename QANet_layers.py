@@ -12,7 +12,7 @@ import math
 import copy
 from torch.autograd import Variable
 from BiDAF_layers import HighwayEncoder
-from util import mask_logits, clones
+from util import masked_softmax, clones
 
 
 class SublayerConnection(nn.Module):
@@ -137,7 +137,7 @@ class MultiHeadAttention(nn.Module):
         # Combine the last two dimensions to concatenate all the heads together: b x lq x (n*dv)
         q = q.transpose(1, 2).contiguous().view(sz_b, len_q, -1)
         q = self.dropout(self.fc(q))
-        q += residual
+        q = residual + q
 
         q = self.layer_norm(q)
         return q, attn
@@ -160,7 +160,7 @@ class PositionwiseFeedForward(nn.Module):
 
         x = self.w_2(F.relu(self.w_1(x)))
         x = self.dropout(x)
-        x += residual
+        x = residual + x
 
         x = self.layer_norm(x)
         return x
@@ -198,7 +198,7 @@ class QAEncoderBlock(nn.Module):
     Each of these basic operations (conv/self-attention/ffn) is place inside a residual block. For an input X and a
     given operation F, the output is F(layerNorm(X))+X
     """
-    def __init__(self, kernel, d_model, d_ff, num_layers=4, n_head=8, dropout_rate=0.4):
+    def __init__(self, kernel, d_model, d_ff, num_layers=4, n_head=8, dropout_rate=0.1):
         super(QAEncoderBlock, self).__init__()
         self.num_layers = num_layers
         assert d_model % n_head == 0
@@ -220,7 +220,7 @@ class QAEncoderBlock(nn.Module):
                                                             # after for loop x: [batch_size, d_model, seq_len]
         q, attn = self.attention(x, x, x)                   # q: [batch_size, seq_len, d_model]
 
-        x += self.layer_norm(q)
+        x = self.layer_norm(q) + x
         x = self.ff(x)
         return x                                            # output: [batch_size, seq_len, d_ff]
 
@@ -237,8 +237,9 @@ class QAOutput(nn.Module):
     """
     def __init__(self, hidden_size):
         super(QAOutput, self).__init__()
-        self.linear_1 = nn.Linear(hidden_size*2, 1)
-        self.linear_2 = nn.Linear(hidden_size*2, 1)
+        self.linear_1 = nn.Linear(hidden_size*2, 1, bias=False)
+        self.linear_2 = nn.Linear(hidden_size*2, 1, bias=False)
+        self.linear_3 = nn.Linear(2, 1, bias=False)
 
     def forward(self, M0, M1, M2, mask):
         """
@@ -253,11 +254,14 @@ class QAOutput(nn.Module):
         X1 = torch.cat([M0, M1], dim=2)
         X2 = torch.cat([M0, M2], dim=2)
         logits_1 = self.linear_1(X1)
-        logits_2 = self.linear_1(X2)
+        logits_2 = self.linear_2(X2)
 
         # Shapes: (batch_size, seq_len)
         mask = mask.type(torch.float)
-        log_p1 = mask_logits(logits_1.squeeze(), mask)
-        log_p2 = mask_logits(logits_2.squeeze(), mask)
+        log_p1 = masked_softmax(logits_1.squeeze(), mask, log_softmax=True)   # [batch_size, seq_len]
+
+        logits_2 = torch.cat([logits_2, log_p1.unsqueeze(2)], dim=2)   # [batch_size, seq_len, 2]
+        logits_2 = self.linear_3(logits_2)                      # [batch_size, seq_len, 1]
+        log_p2 = masked_softmax(logits_2.squeeze(), mask, log_softmax=True)
 
         return log_p1, log_p2

@@ -3,11 +3,43 @@
   <component name="LeetcodeEditor">
     <option name="projectConfig">
       <map>
+        <entry key="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[110]Balanced Binary Tree.py">
+          <value>
+            <LeetcodeEditor>
+              <option name="path" value="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[110]Balanced Binary Tree.py" />
+              <option name="questionId" value="110" />
+            </LeetcodeEditor>
+          </value>
+        </entry>
         <entry key="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[114]Flatten Binary Tree to Linked List.py">
           <value>
             <LeetcodeEditor>
               <option name="path" value="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[114]Flatten Binary Tree to Linked List.py" />
               <option name="questionId" value="114" />
+            </LeetcodeEditor>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[130]Surrounded Regions.py">
+          <value>
+            <LeetcodeEditor>
+              <option name="path" value="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[130]Surrounded Regions.py" />
+              <option name="questionId" value="130" />
+            </LeetcodeEditor>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[134]Gas Station.py">
+          <value>
+            <LeetcodeEditor>
+              <option name="path" value="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[134]Gas Station.py" />
+              <option name="questionId" value="134" />
+            </LeetcodeEditor>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[139]Word Break.py">
+          <value>
+            <LeetcodeEditor>
+              <option name="path" value="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[139]Word Break.py" />
+              <option name="questionId" value="139" />
             </LeetcodeEditor>
           </value>
         </entry>
@@ -19,11 +51,51 @@
             </LeetcodeEditor>
           </value>
         </entry>
+        <entry key="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[264]Ugly Number II.py">
+          <value>
+            <LeetcodeEditor>
+              <option name="path" value="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[264]Ugly Number II.py" />
+              <option name="questionId" value="264" />
+            </LeetcodeEditor>
+          </value>
+        </entry>
         <entry key="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[449]Serialize and Deserialize BST.py">
           <value>
             <LeetcodeEditor>
               <option name="path" value="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[449]Serialize and Deserialize BST.py" />
               <option name="questionId" value="449" />
+            </LeetcodeEditor>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[473]Matchsticks to Square.py">
+          <value>
+            <LeetcodeEditor>
+              <option name="path" value="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[473]Matchsticks to Square.py" />
+              <option name="questionId" value="473" />
+            </LeetcodeEditor>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[76]Minimum Window Substring.py">
+          <value>
+            <LeetcodeEditor>
+              <option name="path" value="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[76]Minimum Window Substring.py" />
+              <option name="questionId" value="76" />
+            </LeetcodeEditor>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[91]Decode Ways.py">
+          <value>
+            <LeetcodeEditor>
+              <option name="path" value="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[91]Decode Ways.py" />
+              <option name="questionId" value="91" />
+            </LeetcodeEditor>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[95]Unique Binary Search Trees II.py">
+          <value>
+            <LeetcodeEditor>
+              <option name="path" value="$PROJECT_DIR$/../../../../LeetCode/leetcode/editor/en/[95]Unique Binary Search Trees II.py" />
+              <option name="questionId" value="95" />
             </LeetcodeEditor>
           </value>
         </entry>
