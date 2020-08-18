@@ -34,7 +34,8 @@ class QANet(nn.Module):
         drop_prob (float): Dropout probability.
         kernel: size of the convolving kernel
     """
-    def __init__(self, word_vectors, char_vectors, hidden_size, drop_prob, kernel):
+    def __init__(self, word_vectors, char_vectors, hidden_size, drop_prob, kernel, att_heads, \
+                 num_encoder, num_model, num_block_model):
         super(QANet, self).__init__()
         # Embed layer
         self.embedding = CharEmbeddings(word_vectors=word_vectors,
@@ -43,14 +44,17 @@ class QANet(nn.Module):
                                         dropout_rate=drop_prob)
 
         # Encoder layer
-        self.query_encoders = QAEncoderBlock(kernel=kernel, d_model=hidden_size, d_ff=hidden_size, num_layers=4, dropout_rate=drop_prob)
-        self.context_encoders = QAEncoderBlock(kernel=kernel, d_model=hidden_size, d_ff=hidden_size, num_layers=4, dropout_rate=drop_prob)
+        self.query_encoders = QAEncoderBlock(kernel=kernel, d_model=hidden_size, d_ff=hidden_size,
+                                             num_layers=num_encoder, n_head=att_heads, dropout_rate=drop_prob)
+        self.context_encoders = QAEncoderBlock(kernel=kernel, d_model=hidden_size, d_ff=hidden_size,
+                                               num_layers=num_encoder, n_head=att_heads, dropout_rate=drop_prob)
         # Attention layer
         self.att = BiDAFAttention(hidden_size=hidden_size)
         # Model layer
         self.proj = DepthwiseSeperableConv(in_channels=hidden_size*4, out_channels=hidden_size)
         self.models = clones(QAEncoderBlock(kernel=kernel, d_model=hidden_size,
-                                            d_ff=hidden_size, num_layers=2, dropout_rate=drop_prob), 2)     # use 7 in the paper
+                                            d_ff=hidden_size, num_layers=num_model, n_head=att_heads,
+                                            dropout_rate=drop_prob), num_block_model)     # use 7 in the paper
         # Output layer
         self.output = QAOutput(hidden_size=hidden_size)
 

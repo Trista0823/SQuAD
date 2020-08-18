@@ -57,14 +57,14 @@ def main(args):
                            drop_prob=args.drop_prob)
 
     model_QANet = QANet(word_vectors=word_vectors,
-                  char_vectors=char_vectors,
-                  hidden_size=args.hidden_size,
-                  kernel=args.kernel_size,
-                  drop_prob=args.drop_prob)
-
-    # model_QANet = QANetRevised(word_vectors=word_vectors,
-    #                            char_vectors=char_vectors,
-    #                            args=args)
+                        char_vectors=char_vectors,
+                        hidden_size=args.hidden_size,
+                        kernel=args.kernel_size,
+                        drop_prob=args.drop_prob,
+                        att_heads=args.attention_heads,
+                        num_encoder=args.num_encoder,
+                        num_model=args.num_model,
+                        num_block_model=args.num_block_model)
 
     if args.is_baseline:
         model = model_baseline
@@ -90,8 +90,11 @@ def main(args):
                                  log=log)
 
     # Get optimizer and scheduler
-    optimizer = optim.Adadelta(model.parameters(), args.lr,
-                               weight_decay=args.l2_wd)
+    # optimizer = optim.Adadelta(model.parameters(), args.lr,
+    #                            weight_decay=args.l2_wd)
+    optimizer = optim.Adam(model.parameters(), args.lr,
+                           betas=(0.8, 0.999), eps=1e-7,
+                           weight_decay=args.l2_wd)
     scheduler = sched.LambdaLR(optimizer, lambda s: 1.)  # Constant LR
 
     # Get data loader

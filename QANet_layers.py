@@ -239,7 +239,8 @@ class QAOutput(nn.Module):
         super(QAOutput, self).__init__()
         self.linear_1 = nn.Linear(hidden_size*2, 1, bias=False)
         self.linear_2 = nn.Linear(hidden_size*2, 1, bias=False)
-        self.linear_3 = nn.Linear(2, 1, bias=False)
+        # modified output
+        # self.linear_3 = nn.Linear(2, 1, bias=False)
 
     def forward(self, M0, M1, M2, mask):
         """
@@ -260,8 +261,10 @@ class QAOutput(nn.Module):
         mask = mask.type(torch.float)
         log_p1 = masked_softmax(logits_1.squeeze(), mask, log_softmax=True)   # [batch_size, seq_len]
 
-        logits_2 = torch.cat([logits_2, log_p1.unsqueeze(2)], dim=2)   # [batch_size, seq_len, 2]
-        logits_2 = self.linear_3(logits_2)                      # [batch_size, seq_len, 1]
+        # modified output
+        # logits_2 = torch.cat([logits_2, log_p1.unsqueeze(2)], dim=2)   # [batch_size, seq_len, 2]
+        # logits_2 = self.linear_3(logits_2)                      # [batch_size, seq_len, 1]
+
         log_p2 = masked_softmax(logits_2.squeeze(), mask, log_softmax=True)
 
         return log_p1, log_p2

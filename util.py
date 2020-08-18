@@ -18,8 +18,7 @@ import tqdm
 import numpy as np
 import ujson as json
 
-from collections import Counter
-
+from collections import Counter, OrderedDict
 
 class SQuAD(data.Dataset):
     """Stanford Question Answering Dataset (SQuAD).
@@ -336,9 +335,14 @@ def load_model(model, checkpoint_path, gpu_ids, return_step=True):
     """
     device = f"cuda:{gpu_ids[0] if gpu_ids else 'cpu'}"
     ckpt_dict = torch.load(checkpoint_path, map_location=device)
-
-    # Build model, load parameters
-    model.load_state_dict(ckpt_dict['model_state'])
+    new_ckpt_dict = OrderedDict()
+    # modify key，if there is 'module' in the keys, we need to delete; else not
+    for k, v in ckpt_dict['model_state'].items():
+        if 'module' in k:
+            k = k.replace('module.', '')
+        new_ckpt_dict[k] = v
+    # load the modified chekck point dict file
+    model.load_state_dict(new_ckpt_dict)
 
     if return_step:
         step = ckpt_dict['step']

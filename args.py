@@ -99,20 +99,16 @@ def get_train_args():
                         help='Number of steps between successive evaluations.')
     parser.add_argument('--lr',
                         type=float,
-                        default=0.5,
+                        default=0.001,
                         help='Learning rate.')
     parser.add_argument('--l2_wd',
                         type=float,
-                        default=0,
+                        default=0.999,
                         help='L2 weight decay.')
     parser.add_argument('--num_epochs',
                         type=int,
-                        default=30,
+                        default=15,
                         help='Number of epochs for which to train. Negative means forever.')
-    parser.add_argument('--drop_prob',
-                        type=float,
-                        default=0.2,
-                        help='Probability of zeroing an activation in dropout layers.')
     parser.add_argument('--metric_name',
                         type=str,
                         default='F1',
@@ -134,10 +130,7 @@ def get_train_args():
                         type=float,
                         default=0.999,
                         help='Decay rate for exponential moving average of parameters.')
-    parser.add_argument('--is_baseline',
-                        type=bool,
-                        default=False,
-                        help='Whether to train the baseline model')
+
 
     args = parser.parse_args()
 
@@ -225,6 +218,10 @@ def add_train_test_args(parser):
                         type=str,
                         default='./save/',
                         help='Base directory for saving information.')
+    parser.add_argument('--load_path',
+                        type=str,
+                        default=None,
+                        help='Path to load as a model checkpoint.')
     parser.add_argument('--batch_size',
                         type=int,
                         default=64,
@@ -246,12 +243,31 @@ def add_train_test_args(parser):
                         type=int,
                         default=10,
                         help='Number of examples to visualize in TensorBoard.')
-    parser.add_argument('--load_path',
-                        type=str,
-                        default=None,
-                        help='Path to load as a model checkpoint.')
-
-
+    parser.add_argument('--attention_heads',
+                        type=int,
+                        default=8,
+                        help='number of attention heads')
+    parser.add_argument('--drop_prob',
+                        type=float,
+                        default=0.01,
+                        help='Probability of zeroing an activation in dropout layers.')
+    parser.add_argument('--num_encoder',
+                        type=int,
+                        default=4,
+                        help='number of convolution layers in each block of encoder layer')
+    parser.add_argument('--num_model',
+                        type=int,
+                        default=1,
+                        help='number of convolution layers in each block of model layer')
+    parser.add_argument('--num_block_model',
+                        type=int,
+                        default=3,
+                        help='number of encoder blocks in the model layer')
+    parser.add_argument('--is_baseline',
+                        type=bool,
+                        default=False,
+                        help='Whether to train the baseline model')
+    """
     parser.add_argument('--num_encoder_channels',
                         type=int,
                         default=128,
@@ -264,8 +280,5 @@ def add_train_test_args(parser):
                         type=int,
                         default=7,
                         help='Kernel size')
-    parser.add_argument('--attention_heads',
-                        type=int,
-                        default=8,
-                        help='Kernel size')
+    """
 
